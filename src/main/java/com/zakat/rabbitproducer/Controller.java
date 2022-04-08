@@ -11,6 +11,9 @@ public class Controller {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    private ServiceFromRabbit serviceFromRabbit;
+
     private final String EXCHANGE_NAME = "obmennik";
 
     @GetMapping("/gen/{number}")
@@ -20,6 +23,18 @@ IntDto intDto = new IntDto(Long.parseLong(number));
 
 
         rabbitTemplate.convertAndSend(EXCHANGE_NAME, "rk", intDto);
-        return "Ok!";
+
+        Message returnedMessage = new Message();
+
+        while (true){
+            returnedMessage = serviceFromRabbit.returnMessageToController();
+            if(!(returnedMessage ==null)){
+                break;
+            }
+        }
+
+        String returnString = returnedMessage.getText();
+        serviceFromRabbit.makeNullMessage();
+        return returnString;
     }
 }
